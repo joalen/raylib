@@ -1,0 +1,82 @@
+name: Run AddressSanitizer
+
+on:
+  push:
+
+jobs:
+  run-asan:
+    name: '${{ matrix.os }}'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, macos-latest]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2 
+        with:
+          ref: fca53c77996ab0b723dd4ee5235671cba9274ca7
+
+      - name: Install dependencies for project (Linux)
+        if: runner.os == 'Linux'
+        run: | 
+          sudo apt-get update
+          sudo apt-get install -y <-- insert your project dependencies here -->
+          
+      - name: Install dependencies for project (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew update && brew install cmake wget
+          
+          wget https://github.com/macports/macports-base/releases/download/v2.9.3/MacPorts-2.9.3.tar.gz
+          tar -xvzf MacPorts-2.9.3.tar.gz
+          cd MacPorts-2.9.3
+          ./configure && make && sudo make install 
+          cd ../ && rm -rf MacPorts-2.9.3*
+          echo 'export PATH="/opt/local/bin:$PATH"' >> ~/.bash_profile
+          source ~/.bash_profile
+          sudo port -v selfupdate
+
+          sudo port selfupdate
+          sudo port install <-- install macports only dependencies for project (you'll have to manually look these up!) -->
+          brew update && brew install <-- install brew only dependencies for project (you'll have to manually look these up!) -->
+
+      - name: Build repository 
+        run: | 
+          mkdir build && cd build 
+          cmake -DCMAKE_C_FLAGS="-fsanitize=address -fno-omit-frame-pointer -g" -DCMAKE_CXX_FLAGS="-fsanitize=address -fno-omit-frame-pointer -g" -DCMAKE_LINKER_FLAGS="-fsanitize=address" -B . ..
+
+      - name: Install Address Sanitizer dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y clang-14 libclang-14-dev llvm-14 llvm-14-dev llvm-14-tools llvm-14-linker-tools
+
+      - name: Install Address Sanitizer dependencies (macOS) 
+        if: runner.os == 'macOS' 
+        run: |
+          brew update
+          brew install llvm ninja
+      
+      - name: Run Google Address Sanitizer
+        run: |
+          #!/bin/bash
+          set +e 
+          
+          build_dir="./build"
+          executables=$(find "$build_dir" -type f | while read -r file; do
+              if file "$file" | grep -q "executable"; then
+                  echo "$file"
+              fi
+          done)
+          
+          TIMEOUT_DURATION=60
+          DELAY_DURATION=5
+          
+          for exe in $executables; do
+              timeout $TIMEOUT_DURATION "$exe" &
+              pid=$!
+
+              sleep $DELAY_DURATION
+              kill -0 $pid &>/dev/null && kill $pid
+          
+              echo "--------------------------------------------------"
+          done
