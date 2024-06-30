@@ -17,10 +17,27 @@ jobs:
         with:
           ref: fca53c77996ab0b723dd4ee5235671cba9274ca7
 
-      - name: Build repository 
+      - name: Install dependencies for project (Linux)
+        if: runner.os == 'Linux'
+        run: | 
+          sudo apt-get update
+          sudo apt install build-essential git
+          sudo apt install cmake
+          sudo apt install libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev
+          sudo apt install wayland-protocols libwayland-dev libxkbcommon-dev 
+      
+      - name: Build repository (macOS)
+        if: runner.os == 'macOS'
         run: | 
           mkdir build && cd build 
           cmake -DCMAKE_C_FLAGS="-fsanitize=address -fno-omit-frame-pointer -g" -DCMAKE_CXX_FLAGS="-fsanitize=address -fno-omit-frame-pointer -g" -DCMAKE_LINKER_FLAGS="-fsanitize=address" -B . ..
+          make 
+
+      - name: Build repository (Linux)
+        if: runner.os == 'Linux'
+        run: | 
+          mkdir build && cd build 
+          cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_C_FLAGS="-fsanitize=address -fno-omit-frame-pointer -g" -DCMAKE_CXX_FLAGS="-fsanitize=address -fno-omit-frame-pointer -g" -DCMAKE_LINKER_FLAGS="-fsanitize=address" -B . ..
           make 
           
       - name: Install Address Sanitizer dependencies (Linux)
