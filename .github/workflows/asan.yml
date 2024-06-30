@@ -17,6 +17,14 @@ jobs:
         with:
           ref: fca53c77996ab0b723dd4ee5235671cba9274ca7
 
+      - name: Install and run mock display -- (needed for GUI application testing) (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install --cask xquartz
+          defaults write org.macosforge.xquartz.X11 enable_iglx -bool true
+          export DISPLAY=:0
+          
+      
       - name: Install dependencies for project (Linux)
         if: runner.os == 'Linux'
         run: | 
