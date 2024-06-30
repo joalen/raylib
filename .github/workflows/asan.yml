@@ -48,9 +48,10 @@ jobs:
         if: runner.os == 'macOS' 
         run: |
           brew update
-          brew install llvm ninja
+          brew install llvm ninja coreutils
       
-      - name: Run Google Address Sanitizer
+      - name: Run Google Address Sanitizer (Linux)
+        if: runner.os == 'Linux'
         run: |
           #!/bin/bash
           set +e 
@@ -67,6 +68,32 @@ jobs:
           
           for exe in $executables; do
               timeout $TIMEOUT_DURATION "$exe" &
+              pid=$!
+
+              sleep $DELAY_DURATION
+              kill -0 $pid &>/dev/null && kill $pid
+          
+              echo "--------------------------------------------------"
+          done
+
+      - name: Run Google Address Sanitizer (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          #!/bin/bash
+          set +e 
+          
+          build_dir="./build"
+          executables=$(find "$build_dir" -type f | while read -r file; do
+              if file "$file" | grep -q "executable"; then
+                  echo "$file"
+              fi
+          done)
+          
+          TIMEOUT_DURATION=60
+          DELAY_DURATION=5
+          
+          for exe in $executables; do
+              gtimeout $TIMEOUT_DURATION "$exe" &
               pid=$!
 
               sleep $DELAY_DURATION
