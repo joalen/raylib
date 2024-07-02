@@ -38,6 +38,7 @@ jobs:
           export CXX=clang++
           export CFLAGS="-fsanitize=memory -fsanitize-memory-track-origins -fPIE -fPIC -g -O2"
           export LDFLAGS="-fsanitize=memory -pie"
+          cmake ..
           sed -i 's/^CC\s*=.*/CC = clang/' Makefile
           sed -i 's/^CXX\s*=.*/CXX = clang++/' Makefile
           sed -i 's/^CFLAGS\s*=.*/& -fsanitize=memory -fsanitize-memory-track-origins -fPIE -fPIC -g -O2/' Makefile
