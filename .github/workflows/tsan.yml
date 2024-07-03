@@ -50,6 +50,7 @@ jobs:
         run: |
             #!/bin/bash
             set +e
+            ulimit -c unlimited
             DIRECTORY=$(pwd)
             
             is_executable() {
