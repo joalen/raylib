@@ -77,8 +77,14 @@ jobs:
             timeout 30s drmemory -logdir "./logs" -- "$executable"
             local exit_status=$?
             pid=$!
-            sleep $DELAY_DURATION
-            kill -0 $pid &>/dev/null && kill $pid
+            sleep 40
+            
+            HIGH_CPU_PROCESSES=$(ps -eo pid,%cpu,args --sort=-%cpu | awk '$2 > 50 && /drmemory/ {print $1}')
+            if [ -n "$HIGH_CPU_PROCESSES" ]; then
+              for pid in $HIGH_CPU_PROCESSES; do
+                kill -9 $pid
+              done
+            fi
           }
 
           find "$DIRECTORY" -type f -executable | while read -r file; do
