@@ -92,7 +92,6 @@ jobs:
 
           echo "=========[Dr. Memory service finished]========="
         continue-on-error: true 
-        timeout-minutes: 2
         
       - name: Upload Dr. Memory reports
         uses: actions/upload-artifact@v3
