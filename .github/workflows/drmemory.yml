@@ -74,17 +74,31 @@ jobs:
           run_with_drmemory() {
             local executable="$1"
             local log_dir="./logs"
-            timeout 30s drmemory -logdir "./logs" -- "$executable"
+            timeout 45s drmemory -logdir "./logs" -- "$executable"
             local exit_status=$?
             pid=$!
             sleep 40
             
-            HIGH_CPU_PROCESSES=$(ps -eo pid,%cpu,args --sort=-%cpu | awk '$2 > 50 && /drmemory/ {print $1}')
-            if [ -n "$HIGH_CPU_PROCESSES" ]; then
-              for pid in $HIGH_CPU_PROCESSES; do
-                kill -9 $pid
-              done
-            fi
+            while true; do
+              sleep 10  # Adjust sleep interval as needed
+              current_time=$(date +%s)
+              elapsed_time=$((current_time - start_time))
+              kill -0 $drmemory_pid &>/dev/null || break 
+              
+              HIGH_CPU_PROCESSES=$(ps -eo pid,%cpu,args --sort=-%cpu | awk '$2 > 50 && /drmemory/ {print $1}')
+              if [ -n "$HIGH_CPU_PROCESSES" ]; then
+                for pid in $HIGH_CPU_PROCESSES; do
+                  echo "Killing CPU-intensive process: $pid"
+                  kill -9 $pid
+                done
+              fi
+              
+              if [ $elapsed_time -ge 1800 ]; then  # 1800 seconds = 30 minutes
+                echo "Timeout exceeded, terminating Dr. Memory"
+                kill -9 $drmemory_pid
+                break
+              fi
+            done
           }
 
           find "$DIRECTORY" -type f -executable | while read -r file; do
