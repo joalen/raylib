@@ -74,8 +74,11 @@ jobs:
           run_with_drmemory() {
             local executable="$1"
             local log_dir="./logs"
-            timeout 30s drmemory -logdir "./logs" -- "$executable" 2>&1 | grep -vE 'GLFW: Error: 65550|GLFW: Failed to initialize GLFW'
+            timeout 30s drmemory -logdir "./logs" -- "$executable"
             local exit_status=$?
+            pid=$!
+            sleep $DELAY_DURATION
+            kill -0 $pid &>/dev/null && kill $pid
           }
 
           find "$DIRECTORY" -type f -executable | while read -r file; do
