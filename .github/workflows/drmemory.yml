@@ -17,6 +17,14 @@ jobs:
         with:
           ref: fca53c77996ab0b723dd4ee5235671cba9274ca7
 
+      - name: Set up Xvfb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          sudo apt-get install -y libgl1-mesa-dev
+          Xvfb :99 -screen 0 1024x768x24 &
+          export DISPLAY=:99
+        
       - name: Install dependencies for project (Linux)
         if: runner.os == 'Linux'
         run: | 
